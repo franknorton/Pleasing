@@ -46,6 +46,7 @@
   <ItemGroup>
     <Compile Include="Easing.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Tweening.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -334,5 +334,73 @@ namespace Please
                 return Out(k * 2f - 1f) * 0.5f + 0.5f;
             }
         };
+
+
+        /// <summary>
+        /// Implementation adapted from http://www.flong.com/texts/code/shapers_bez/
+        /// </summary>
+        /// <param name="time">The value to ease</param>
+        /// <param name="aX"></param>
+        /// <param name="aY"></param>
+        /// <param name="bX"></param>
+        /// <param name="bY"></param>
+        /// <returns></returns>
+        public static float Bezier(float time, float aX, float aY, float bX, float bY)
+        {
+            float y0a = 0.00f; // initial y
+            float x0a = 0.00f; // initial x 
+            float y1a = aY;    // 1st influence y   
+            float x1a = aX;    // 1st influence x 
+            float y2a = bY;    // 2nd influence y
+            float x2a = bX;    // 2nd influence x
+            float y3a = 1.00f; // final y 
+            float x3a = 1.00f; // final x 
+
+            float A = x3a - 3 * x2a + 3 * x1a - x0a;
+            float B = 3 * x2a - 6 * x1a + 3 * x0a;
+            float C = 3 * x1a - 3 * x0a;
+            float D = x0a;
+
+            float E = y3a - 3 * y2a + 3 * y1a - y0a;
+            float F = 3 * y2a - 6 * y1a + 3 * y0a;
+            float G = 3 * y1a - 3 * y0a;
+            float H = y0a;
+
+            // Solve for t given x (using Newton-Raphelson), then solve for y given t.
+            // Assume for the first guess that t = x.
+            float currentt = time;
+            int nRefinementIterations = 5;
+            for (int i = 0; i < nRefinementIterations; i++)
+            {
+                float currentx = xFromT(currentt, A, B, C, D);
+                float currentslope = slopeFromT(currentt, A, B, C);
+                currentt -= (currentx - time) * (currentslope);
+                currentt = Constrain(currentt, 0, 1);
+            }
+
+            float y = yFromT(currentt, E, F, G, H);
+            return y;
+        }
+
+        //Helper functions for Bezier
+        private static float Constrain(float value, float min, float max)
+        {
+            return value < min ? min : value > max ? max : value;
+        }
+        private static float slopeFromT(float t, float A, float B, float C)
+        {
+            float dtdx = 1.0f / (3.0f * A * t * t + 2.0f * B * t + C);
+            return dtdx;
+        }
+        private static float xFromT(float t, float A, float B, float C, float D)
+        {
+            float x = A * (t * t * t) + B * (t * t) + C * t + D;
+            return x;
+        }
+        private static float yFromT(float t, float E, float F, float G, float H)
+        {
+            float y = E * (t * t * t) + F * (t * t) + G * t + H;
+            return y;
+        }
     }
 }

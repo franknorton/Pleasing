@@ -40,7 +40,7 @@ namespace Please
         BounceIn,
         BounceOut,
         BounceInOut,
-
+        Bezier
     }
 
     public static class Easing

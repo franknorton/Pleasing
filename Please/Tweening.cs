@@ -19,7 +19,15 @@ namespace Please
 
         public static Tween Tween(int duration, EasingFunction easingFunction = EasingFunction.Linear)
         {
-            return new Tween(duration, easingFunction);
+            var tween = new Tween(duration, easingFunction);
+            tweens.Add(tween);
+            return tween;
+        }
+        public static Tween Tween(int duration, float aX, float aY, float bX, float bY)
+        {
+            var tween = new Tween(duration, aX, aY, bX, bY);
+            tweens.Add(tween);
+            return tween;
         }
 
         public static void Update(GameTime gameTime)
@@ -44,20 +52,62 @@ namespace Please
         private float elapsedTime;
         private int duration;
 
+        public bool Loop { get; set; }
+        public TweenState State { get; set; }
+
         public EasingFunction EasingFunction { get; set; }
+
+        private float aX, aY, bX, bY;
 
         public float Progress
         {
             get
             {
+                if(EasingFunction == EasingFunction.Bezier)
+                {
+                    return Easing.Bezier(MathHelper.Clamp(elapsedTime / duration, 0, 1), aX, aY, bX, bY);
+                }
+
                 return Easing.Ease(EasingFunction, MathHelper.Clamp(elapsedTime / duration, 0, 1));
             }
         }
 
         public Tween(int duration, EasingFunction easingFunction = EasingFunction.Linear)
         {
+            tweenedProperties = new List<ITween>();
             this.duration = duration;
             EasingFunction = easingFunction;
+            State = TweenState.Stopped;
+        }
+        public Tween(int duration, float aX, float aY, float bX, float bY)
+        {
+            tweenedProperties = new List<ITween>();
+            this.duration = duration;
+            EasingFunction = EasingFunction.Bezier;
+            this.aX = aX;
+            this.aY = aY;
+            this.bX = bX;
+            this.bY = bY;
+            State = TweenState.Stopped;
+        }
+
+        public void Start()
+        {
+            State = TweenState.Running;
+        }
+        public void Stop()
+        {
+            State = TweenState.Stopped;
+            elapsedTime = 0;
+        }
+        public void Pause()
+        {
+            State = TweenState.Paused;
+        }
+        public void Restart()
+        {
+            State = TweenState.Running;
+            elapsedTime = 0;
         }
 
         public Tween Add(ITween property)
@@ -110,12 +160,25 @@ namespace Please
         protected void UpdateTime(GameTime gameTime)
         {
             elapsedTime += (float)gameTime.ElapsedGameTime.TotalMilliseconds;
+            if (elapsedTime >= duration)
+            {
+                if (Loop)
+                    elapsedTime = elapsedTime - duration;
+                else
+                {
+                    elapsedTime = duration;
+                    State = TweenState.Stopped;
+                }
+            }
         }
 
         protected void UpdateProperties()
         {
-            foreach (var property in tweenedProperties)
-                property.Tween(Progress);
+            if (State == TweenState.Running)
+            {
+                foreach (var property in tweenedProperties)
+                    property.Tween(Progress);
+            }
         }
 
     }
@@ -133,6 +196,7 @@ namespace Please
         protected T current;
         protected T end;
         protected LerpFunction<T> lerpFunction;
+        protected Action<T> setter;
 
         public TweenProperty(T current, T end, LerpFunction<T> lerpFunction, Action<T> setter)
         {
@@ -140,12 +204,13 @@ namespace Please
             this.beginning = current;
             this.current = current;
             this.end = end;
+            this.setter = setter;
         }
 
         public void Tween(float progress)
         {
             var currentValue = lerpFunction(beginning, end, progress);
-            current = currentValue;
+            setter.Invoke(currentValue);
         }
     }
 

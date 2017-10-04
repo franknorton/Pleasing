@@ -1,0 +1,6 @@
+C:\Users\fnorton\Documents\lunch\Games\NetRTS\netserver\Please\bin\Release\Please.dll
+C:\Users\fnorton\Documents\lunch\Games\NetRTS\netserver\Please\bin\Release\Please.pdb
+C:\Users\fnorton\Documents\lunch\Games\NetRTS\netserver\Please\bin\Release\MonoGame.Framework.dll
+C:\Users\fnorton\Documents\lunch\Games\NetRTS\netserver\Please\bin\Release\MonoGame.Framework.xml
+C:\Users\fnorton\Documents\lunch\Games\NetRTS\netserver\Please\obj\Release\Please.dll
+C:\Users\fnorton\Documents\lunch\Games\NetRTS\netserver\Please\obj\Release\Please.pdb

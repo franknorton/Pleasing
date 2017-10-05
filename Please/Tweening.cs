@@ -6,7 +6,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Please
+namespace Pleaseing
 {
     public static class Tweening
     {
@@ -17,22 +17,16 @@ namespace Please
             tweens = new List<Tween>();
         }
 
-        public static Tween Tween(int duration, EasingFunction easingFunction = EasingFunction.Linear)
+        public static Tween Tween(object obj, int duration, Func<float, float> easingFunction)
         {
-            var tween = new Tween(duration, easingFunction);
-            tweens.Add(tween);
-            return tween;
-        }
-        public static Tween Tween(int duration, float aX, float aY, float bX, float bY)
-        {
-            var tween = new Tween(duration, aX, aY, bX, bY);
+            var tween = new Tween(obj, duration, easingFunction);
             tweens.Add(tween);
             return tween;
         }
 
         public static void Update(GameTime gameTime)
         {
-            foreach (var tween in tweens)
+            foreach(var tween in tweens)
             {
                 tween.Update(gameTime);
             }
@@ -46,49 +40,130 @@ namespace Please
         Stopped
     }
 
+
+
     public class Tween
     {
-        private List<ITween> tweenedProperties;
-        private float elapsedTime;
+        private object targetObject;
+        private PropertyInfo[] properties;
+        private FieldInfo[] fields;
+        private List<TweenableProperty> tweeningProperties;
         private int duration;
+        private float elapsedMilliseconds;
+        private Func<float, float> easingFunction;
 
-        public bool Loop { get; set; }
+        public bool Loop = false;
         public TweenState State { get; set; }
-
-        public EasingFunction EasingFunction { get; set; }
-
-        private float aX, aY, bX, bY;
-
         public float Progress
         {
             get
             {
-                if(EasingFunction == EasingFunction.Bezier)
-                {
-                    return Easing.Bezier(MathHelper.Clamp(elapsedTime / duration, 0, 1), aX, aY, bX, bY);
-                }
-
-                return Easing.Ease(EasingFunction, MathHelper.Clamp(elapsedTime / duration, 0, 1));
+                return easingFunction.Invoke(MathHelper.Clamp(elapsedMilliseconds / duration, 0, 1));
             }
         }
 
-        public Tween(int duration, EasingFunction easingFunction = EasingFunction.Linear)
+        public Tween(object obj, int duration, Func<float, float> easingFunction)
         {
-            tweenedProperties = new List<ITween>();
+            targetObject = obj;
             this.duration = duration;
-            EasingFunction = easingFunction;
-            State = TweenState.Stopped;
+            this.easingFunction = easingFunction;
+            properties = obj.GetType().GetProperties();
+            fields = obj.GetType().GetFields();
+            State = TweenState.Running;
+            tweeningProperties = new List<TweenableProperty>();
         }
-        public Tween(int duration, float aX, float aY, float bX, float bY)
+
+        public Tween Add<T>(string propertyName, T value, LerpFunction<T> lerpFunction)
         {
-            tweenedProperties = new List<ITween>();
-            this.duration = duration;
-            EasingFunction = EasingFunction.Bezier;
-            this.aX = aX;
-            this.aY = aY;
-            this.bX = bX;
-            this.bY = bY;
-            State = TweenState.Stopped;
+            var property = properties.FirstOrDefault(x => x.Name == propertyName);
+            if (property != null)
+            {
+                if (property.PropertyType == typeof(T))
+                {
+                    var tweenableProperty = new TweenProperty<T>(targetObject, property, value, lerpFunction);
+                    tweeningProperties.Add(tweenableProperty);
+                }
+            }
+            else
+            {
+                var field = fields.FirstOrDefault(x => x.Name == propertyName);
+                if(field != null)
+                {
+                    if(field.FieldType == typeof(T))
+                    {
+                        var tweenableProperty = new TweenField<T>(targetObject, field, value, lerpFunction);
+                        tweeningProperties.Add(tweenableProperty);
+                    }
+                }
+            }
+
+            return this;
+        }
+        public Tween Add(string propertyName, float value)
+        {
+            Add<float>(propertyName, value, LerpFunctions.Float);
+            return this;
+        }
+        public Tween Add(string propertyName, Vector2 value)
+        {
+            Add(propertyName, value, LerpFunctions.Vector2);
+            return this;
+        }
+        public Tween Add(string propertyName, Vector3 value)
+        {
+            Add(propertyName, value, LerpFunctions.Vector3);
+            return this;
+        }
+        public Tween Add(string propertyName, Vector4 value)
+        {
+            Add(propertyName, value, LerpFunctions.Vector4);
+            return this;
+        }
+        public Tween Add(string propertyName, Color value)
+        {
+            Add(propertyName, value, LerpFunctions.Color);
+            return this;
+        }
+        public Tween Add(string propertyName, Quaternion value)
+        {
+            Add(propertyName, value, LerpFunctions.Quaternion);
+            return this;
+        }
+        public Tween Add(string propertyName, Rectangle value)
+        {
+            Add(propertyName, value, LerpFunctions.Rectangle);
+            return this;
+        }
+
+        public Tween Add<T>(T startValue, T endValue, Action<T> setter, LerpFunction<T> lerpFunction)
+        {
+            var tweenableProperty = new TweenSetter<T>(startValue, endValue, setter, lerpFunction);
+            tweeningProperties.Add(tweenableProperty);
+            return this;
+        }
+        public Tween Add(float startValue, float endValue, Action<float> setter)
+        {
+            return Add(startValue, endValue, setter, LerpFunctions.Float);
+        }
+        public Tween Add(Vector2 startValue, Vector2 endValue, Action<Vector2> setter)
+        {
+            return Add(startValue, endValue, setter, LerpFunctions.Vector2);
+        }
+        public Tween Add(Vector3 startValue, Vector3 endValue, Action<Vector3> setter)
+        {
+            return Add(startValue, endValue, setter, LerpFunctions.Vector3);
+        }
+        public Tween Add(Vector4 startValue, Vector4 endValue, Action<Vector4> setter)
+        {
+            return Add(startValue, endValue, setter, LerpFunctions.Vector4);
+        }
+        public Tween Add(Color startValue, Color endValue, Action<Color> setter)
+        {
+            return Add(startValue, endValue, setter, LerpFunctions.Color);
+        }
+        public Tween Add(Quaternion startValue, Quaternion endValue, Action<Quaternion> setter)
+        {
+            return Add(startValue, endValue, setter, LerpFunctions.Quaternion);
         }
 
         public void Start()
@@ -98,7 +173,7 @@ namespace Please
         public void Stop()
         {
             State = TweenState.Stopped;
-            elapsedTime = 0;
+            elapsedMilliseconds = 0;
         }
         public void Pause()
         {
@@ -107,147 +182,128 @@ namespace Please
         public void Restart()
         {
             State = TweenState.Running;
-            elapsedTime = 0;
-        }
-
-        public Tween Add(ITween property)
-        {
-            tweenedProperties.Add(property);
-            return this;
-        }
-        public Tween Add(float current, float end, Action<float> setter) {
-            Add(new FloatTweenProperty(current, end, setter));
-            return this;
-        }
-        public Tween Add(Vector2 current, Vector2 end, Action<Vector2> setter)
-        {
-            Add(new Vector2TweenProperty(current, end, setter));
-            return this;
-        }
-        public Tween Add(Vector3 current, Vector3 end, Action<Vector3> setter)
-        {
-            Add(new Vector3TweenProperty(current, end, setter));
-            return this;
-        }
-        public Tween Add(Vector4 current, Vector4 end, Action<Vector4> setter)
-        {
-            Add(new Vector4TweenProperty(current, end, setter));
-            return this;
-        }
-        public Tween Add(Color current, Color end, Action<Color> setter)
-        {
-            Add(new ColorTweenProperty(current, end, setter));
-            return this;
-        }
-        public Tween Add(Quaternion current, Quaternion end, Action<Quaternion> setter)
-        {
-            Add(new QuaternionTweenProperty(current, end, setter));
-            return this;
-        }
-        public Tween Add<T>(T start, T end, LerpFunction<T> lerpFunction, Action<T> setter)
-        {
-            var tweenProperty = new TweenProperty<T>(start, end, lerpFunction, setter);
-            tweenedProperties.Add(tweenProperty);
-            return this;
+            elapsedMilliseconds = 0;
         }
 
         public void Update(GameTime gameTime)
         {
             UpdateTime(gameTime);
-            UpdateProperties();
-        }
 
-        protected void UpdateTime(GameTime gameTime)
-        {
-            elapsedTime += (float)gameTime.ElapsedGameTime.TotalMilliseconds;
-            if (elapsedTime >= duration)
+            if(State == TweenState.Running)
             {
-                if (Loop)
-                    elapsedTime = elapsedTime - duration;
-                else
-                {
-                    elapsedTime = duration;
-                    State = TweenState.Stopped;
-                }
-            }
-        }
-
-        protected void UpdateProperties()
-        {
-            if (State == TweenState.Running)
-            {
-                foreach (var property in tweenedProperties)
+                foreach (var property in tweeningProperties)
                     property.Tween(Progress);
             }
         }
 
+        private void UpdateTime(GameTime gameTime)
+        {
+            elapsedMilliseconds += (float)gameTime.ElapsedGameTime.TotalMilliseconds;
+            if (elapsedMilliseconds >= duration)
+            {
+                if (Loop)
+                    elapsedMilliseconds = elapsedMilliseconds - duration;
+                else
+                {
+                    elapsedMilliseconds = duration;
+                    State = TweenState.Stopped;
+                }
+            }
+        }
     }
 
-    public interface ITween
+    public interface TweenableProperty
     {
         void Tween(float progress);
     }
 
-    public delegate T LerpFunction<T>(T start, T end, float progress);
-
-    public class TweenProperty<T> : ITween
+    class TweenProperty<T> : TweenableProperty
     {
-        protected T beginning;
-        protected T current;
-        protected T end;
-        protected LerpFunction<T> lerpFunction;
-        protected Action<T> setter;
+        public object target;
+        public PropertyInfo property;
+        public T startValue;
+        public T value;
+        LerpFunction<T> lerpFunction;
 
-        public TweenProperty(T current, T end, LerpFunction<T> lerpFunction, Action<T> setter)
+        public TweenProperty(object target, PropertyInfo property, T value, LerpFunction<T> lerpFunction)
         {
+            this.target = target;
+            this.property = property;
+            this.value = value;
             this.lerpFunction = lerpFunction;
-            this.beginning = current;
-            this.current = current;
-            this.end = end;
-            this.setter = setter;
+            startValue = (T)property.GetValue(target);
         }
 
         public void Tween(float progress)
         {
-            var currentValue = lerpFunction(beginning, end, progress);
+            var lerpValue = lerpFunction(startValue, value, progress);
+            property.SetValue(target, lerpValue);
+        }
+    }
+    class TweenField<T> : TweenableProperty
+    {
+        public object target;
+        public FieldInfo field;
+        public T startValue;
+        public T value;
+        LerpFunction<T> lerpFunction;
+
+        public TweenField(object target, FieldInfo field, T value, LerpFunction<T> lerpFunction)
+        {
+            this.target = target;
+            this.field = field;
+            this.value = value;
+            this.lerpFunction = lerpFunction;
+            startValue = (T)field.GetValue(target);
+        }
+
+        public void Tween(float progress)
+        {
+            var lerpValue = lerpFunction(startValue, value, progress);
+            field.SetValue(target, lerpValue);
+        }
+    }
+    class TweenSetter<T> : TweenableProperty
+    {
+        public T startValue;
+        public T endValue;
+        public LerpFunction<T> lerpFunction;
+        public Action<T> setter;
+        
+        public TweenSetter(T startValue, T endValue, Action<T> setter, LerpFunction<T> lerpFunction)
+        {
+            this.startValue = startValue;
+            this.endValue = endValue;
+            this.setter = setter;
+            this.lerpFunction = lerpFunction;
+        }
+
+        public void Tween(float progress)
+        {
+            var currentValue = lerpFunction(startValue, endValue, progress);
             setter.Invoke(currentValue);
         }
     }
 
-    public class FloatTweenProperty : TweenProperty<float>
-    {
-        private static readonly LerpFunction<float> function = (s, e, p) => s + (e - s) * p;
-        public FloatTweenProperty(float current, float end, Action<float> setter) : base(current, end, function, setter) { }
-    }
 
-    public class Vector2TweenProperty : TweenProperty<Vector2>
-    {
-        private static readonly LerpFunction<Vector2> function = (s, e, p) => { return Vector2.Lerp(s, e, p); };
-        public Vector2TweenProperty(Vector2 current, Vector2 end, Action<Vector2> setter) : base(current, end, function, setter) { }
-    }
+    public delegate T LerpFunction<T>(T start, T end, float progress);
 
-    public class Vector3TweenProperty : TweenProperty<Vector3>
+    static class LerpFunctions
     {
-        private static readonly LerpFunction<Vector3> function = (s, e, p) => { return Vector3.Lerp(s, e, p); };
-        public Vector3TweenProperty(Vector3 current, Vector3 end, Action<Vector3> setter) : base(current, end, function, setter) { }
-    }
-
-    public class Vector4TweenProperty : TweenProperty<Vector4>
-    {
-        private static readonly LerpFunction<Vector4> function = (s, e, p) => { return Vector4.Lerp(s, e, p); };
-        public Vector4TweenProperty(Vector4 current, Vector4 end, Action<Vector4> setter) : base(current, end, function, setter) { }
-    }
-
-    public class ColorTweenProperty : TweenProperty<Color>
-    {
-        private static readonly LerpFunction<Color> function = (s, e, p) => { return Color.Lerp(s, e, p); };
-        public ColorTweenProperty(Color current, Color end, Action<Color> setter) : base(current, end, function, setter) { }
-    }
-
-    public class QuaternionTweenProperty : TweenProperty<Quaternion>
-    {
-        private static readonly LerpFunction<Quaternion> function = (s, e, p) => { return Quaternion.Lerp(s, e, p); };
-        public QuaternionTweenProperty(Quaternion current, Quaternion end, Action<Quaternion> setter) : base(current, end, function, setter) { }
+        public static LerpFunction<float> Float = (s, e, p) => s + (e - s) * p;
+        public static LerpFunction<Vector2> Vector2 = (s, e, p) => { return Microsoft.Xna.Framework.Vector2.Lerp(s, e, p); };
+        public static LerpFunction<Vector3> Vector3 = (s, e, p) => { return Microsoft.Xna.Framework.Vector3.Lerp(s, e, p); };
+        public static LerpFunction<Vector4> Vector4 = (s, e, p) => { return Microsoft.Xna.Framework.Vector4.Lerp(s, e, p); };
+        public static LerpFunction<Color> Color = (s, e, p) => { return Microsoft.Xna.Framework.Color.Lerp(s, e, p); };
+        public static LerpFunction<Quaternion> Quaternion = (s, e, p) => { return Microsoft.Xna.Framework.Quaternion.Lerp(s, e, p); };
+        public static LerpFunction<Rectangle> Rectangle = (s, e, p) =>
+            {
+                var pX = s.X + (e.X - s.X) * p;
+                var pY = s.Y + (e.Y - s.Y) * p;
+                var width = s.Width + (e.Width - s.Width) * p;
+                var height = s.Height + (e.Height - s.Height) * p;
+                return new Microsoft.Xna.Framework.Rectangle((int)pX, (int)pY, (int)width, (int)height);
+            };
     }
 
 

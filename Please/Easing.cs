@@ -382,6 +382,11 @@ namespace Please
             return y;
         }
 
+        public static Func<float, float> BezierFunction(float aX, float aY, float bX, float bY)
+        {
+            return (x) => Bezier(x, aX, aY, bX, bY);
+        }
+
         //Helper functions for Bezier
         private static float Constrain(float value, float min, float max)
         {

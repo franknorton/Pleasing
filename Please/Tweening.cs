@@ -10,23 +10,31 @@ namespace Pleaseing
 {
     public static class Tweening
     {
-        private static List<Tween> tweens;
+        private static List<TweenTimeline> tweens;
 
         static Tweening()
         {
-            tweens = new List<Tween>();
+            tweens = new List<TweenTimeline>();
         }
 
-        public static Tween Tween(object obj, int duration, Func<float, float> easingFunction)
+        public static TweenTimeline Tween(object obj, Func<float, float> easingFunction, float endTime, float startTime = 0)
         {
-            var tween = new Tween(obj, duration, easingFunction);
-            tweens.Add(tween);
-            return tween;
+            var tween = new Tween(obj, startTime, endTime, easingFunction);
+            var timeline = new TweenTimeline(endTime);
+            timeline.Add(tween);
+            return timeline;
+        }
+
+        public static TweenTimeline NewTimeline(float duration)
+        {
+            var timeline = new TweenTimeline(duration);
+            tweens.Add(timeline);
+            return timeline;
         }
 
         public static void Update(GameTime gameTime)
         {
-            foreach(var tween in tweens)
+            foreach (var tween in tweens)
             {
                 tween.Update(gameTime);
             }
@@ -40,7 +48,82 @@ namespace Pleaseing
         Stopped
     }
 
+    public class TweenTimeline
+    {
+        public List<Tween> tweens;
+        public float elapsedMilliseconds;
+        public bool Loop;
+        public float duration;
+        public TweenState State;
 
+        public TweenTimeline(float duration)
+        {
+            this.duration = duration;
+            tweens = new List<Tween>();
+            State = TweenState.Running;
+        }
+
+        public void Start()
+        {
+            State = TweenState.Running;
+        }
+        public void Stop()
+        {
+            elapsedMilliseconds = 0;
+            State = TweenState.Stopped;
+        }
+        public void Pause()
+        {
+            State = TweenState.Paused;
+        }
+        public void Restart()
+        {
+            elapsedMilliseconds = 0;
+            State = TweenState.Running;
+        }
+
+        public Tween Add(Tween tween)
+        {
+            tweens.Add(tween);
+            return tween;
+        }
+        public Tween Add(object obj, Func<float, float> easingFunction, float startTime, float endTime)
+        {
+            var tween = new Tween(obj, startTime, endTime, easingFunction);
+            tweens.Add(tween);
+
+            if (endTime > duration)
+                duration = endTime;
+
+            return tween;
+        }
+
+        public void Update(GameTime gameTime)
+        {
+            if (State == TweenState.Running)
+            {
+                elapsedMilliseconds += (float)gameTime.ElapsedGameTime.TotalMilliseconds;
+
+                if (elapsedMilliseconds >= duration)
+                {
+                    if (Loop)
+                    {
+                        elapsedMilliseconds = elapsedMilliseconds - duration;
+                    }
+                    else
+                    {
+                        Stop();
+                    }
+                }
+
+                if (State == TweenState.Running)
+                {
+                    foreach (var tween in tweens)
+                        tween.Update(elapsedMilliseconds);
+                }
+            }
+        }
+    }
 
     public class Tween
     {
@@ -48,29 +131,28 @@ namespace Pleaseing
         private PropertyInfo[] properties;
         private FieldInfo[] fields;
         private List<TweenableProperty> tweeningProperties;
-        private int duration;
+        private float startTime;
+        private float endTime;
         private float elapsedMilliseconds;
         private Func<float, float> easingFunction;
 
-        public bool Loop = false;
-        public TweenState State { get; set; }
         public float Progress
         {
             get
             {
-                return easingFunction.Invoke(MathHelper.Clamp(elapsedMilliseconds / duration, 0, 1));
+                return easingFunction.Invoke(MathHelper.Clamp((elapsedMilliseconds - startTime) / (endTime - startTime), 0, 1));
             }
         }
 
-        public Tween(object obj, int duration, Func<float, float> easingFunction)
+        public Tween(object obj, float startTime, float endTime, Func<float, float> easingFunction)
         {
             targetObject = obj;
-            this.duration = duration;
             this.easingFunction = easingFunction;
             properties = obj.GetType().GetProperties();
             fields = obj.GetType().GetFields();
-            State = TweenState.Running;
             tweeningProperties = new List<TweenableProperty>();
+            this.startTime = startTime;
+            this.endTime = endTime;
         }
 
         public Tween Add<T>(string propertyName, T value, LerpFunction<T> lerpFunction)
@@ -87,9 +169,9 @@ namespace Pleaseing
             else
             {
                 var field = fields.FirstOrDefault(x => x.Name == propertyName);
-                if(field != null)
+                if (field != null)
                 {
-                    if(field.FieldType == typeof(T))
+                    if (field.FieldType == typeof(T))
                     {
                         var tweenableProperty = new TweenField<T>(targetObject, field, value, lerpFunction);
                         tweeningProperties.Add(tweenableProperty);
@@ -166,49 +248,13 @@ namespace Pleaseing
             return Add(startValue, endValue, setter, LerpFunctions.Quaternion);
         }
 
-        public void Start()
+        public void Update(float timelineElapsedMilliseconds)
         {
-            State = TweenState.Running;
-        }
-        public void Stop()
-        {
-            State = TweenState.Stopped;
-            elapsedMilliseconds = 0;
-        }
-        public void Pause()
-        {
-            State = TweenState.Paused;
-        }
-        public void Restart()
-        {
-            State = TweenState.Running;
-            elapsedMilliseconds = 0;
-        }
+            elapsedMilliseconds = timelineElapsedMilliseconds;
 
-        public void Update(GameTime gameTime)
-        {
-            UpdateTime(gameTime);
+            foreach (var property in tweeningProperties)
+                property.Tween(Progress);
 
-            if(State == TweenState.Running)
-            {
-                foreach (var property in tweeningProperties)
-                    property.Tween(Progress);
-            }
-        }
-
-        private void UpdateTime(GameTime gameTime)
-        {
-            elapsedMilliseconds += (float)gameTime.ElapsedGameTime.TotalMilliseconds;
-            if (elapsedMilliseconds >= duration)
-            {
-                if (Loop)
-                    elapsedMilliseconds = elapsedMilliseconds - duration;
-                else
-                {
-                    elapsedMilliseconds = duration;
-                    State = TweenState.Stopped;
-                }
-            }
         }
     }
 
@@ -269,7 +315,7 @@ namespace Pleaseing
         public T endValue;
         public LerpFunction<T> lerpFunction;
         public Action<T> setter;
-        
+
         public TweenSetter(T startValue, T endValue, Action<T> setter, LerpFunction<T> lerpFunction)
         {
             this.startValue = startValue;

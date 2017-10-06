@@ -21,7 +21,7 @@ namespace Pleaseing
         {
             var tween = new Tween(obj, startTime, endTime, easingFunction);
             var timeline = new TweenTimeline(endTime);
-            timeline.Add(tween);
+            timeline.AddTween(tween);
             return timeline;
         }
 
@@ -71,6 +71,7 @@ namespace Pleaseing
         {
             elapsedMilliseconds = 0;
             State = TweenState.Stopped;
+            ResetProperties();
         }
         public void Pause()
         {
@@ -80,14 +81,23 @@ namespace Pleaseing
         {
             elapsedMilliseconds = 0;
             State = TweenState.Running;
+            ResetProperties();
+        }
+        protected void ResetProperties()
+        {
+            for(int i = tweens.Count - 1; i >= 0; i--)
+            {
+                tweens[i].ResetProperties();
+            }
         }
 
-        public Tween Add(Tween tween)
+        public Tween AddTween(Tween tween)
         {
             tweens.Add(tween);
+            tweens = tweens.OrderBy(x => x.startTime).ToList();
             return tween;
         }
-        public Tween Add(object obj, Func<float, float> easingFunction, float startTime, float endTime)
+        public Tween AddTween(object obj, Func<float, float> easingFunction, float startTime, float endTime)
         {
             var tween = new Tween(obj, startTime, endTime, easingFunction);
             tweens.Add(tween);
@@ -95,6 +105,7 @@ namespace Pleaseing
             if (endTime > duration)
                 duration = endTime;
 
+            tweens = tweens.OrderBy(x => x.startTime).ToList();
             return tween;
         }
 
@@ -109,6 +120,7 @@ namespace Pleaseing
                     if (Loop)
                     {
                         elapsedMilliseconds = elapsedMilliseconds - duration;
+                        ResetProperties();
                     }
                     else
                     {
@@ -119,7 +131,10 @@ namespace Pleaseing
                 if (State == TweenState.Running)
                 {
                     foreach (var tween in tweens)
-                        tween.Update(elapsedMilliseconds);
+                    {
+                        if(elapsedMilliseconds >= tween.startTime && elapsedMilliseconds <= tween.endTime)
+                            tween.Update(elapsedMilliseconds);
+                    }
                 }
             }
         }
@@ -131,8 +146,8 @@ namespace Pleaseing
         private PropertyInfo[] properties;
         private FieldInfo[] fields;
         private List<TweenableProperty> tweeningProperties;
-        private float startTime;
-        private float endTime;
+        public float startTime;
+        public float endTime;
         private float elapsedMilliseconds;
         private Func<float, float> easingFunction;
 
@@ -247,6 +262,16 @@ namespace Pleaseing
         {
             return Add(startValue, endValue, setter, LerpFunctions.Quaternion);
         }
+        public Tween Add(Rectangle startValue, Rectangle endValue, Action<Rectangle> setter)
+        {
+            return Add(startValue, endValue, setter, LerpFunctions.Rectangle);
+        }
+
+        public void ResetProperties()
+        {
+            foreach (var property in tweeningProperties)
+                property.Reset();
+        }
 
         public void Update(float timelineElapsedMilliseconds)
         {
@@ -261,6 +286,7 @@ namespace Pleaseing
     public interface TweenableProperty
     {
         void Tween(float progress);
+        void Reset();
     }
 
     class TweenProperty<T> : TweenableProperty
@@ -278,6 +304,11 @@ namespace Pleaseing
             this.value = value;
             this.lerpFunction = lerpFunction;
             startValue = (T)property.GetValue(target);
+        }
+
+        public void Reset()
+        {
+            property.SetValue(target, startValue);
         }
 
         public void Tween(float progress)
@@ -303,6 +334,11 @@ namespace Pleaseing
             startValue = (T)field.GetValue(target);
         }
 
+        public void Reset()
+        {
+            field.SetValue(target, startValue);
+        }
+
         public void Tween(float progress)
         {
             var lerpValue = lerpFunction(startValue, value, progress);
@@ -322,6 +358,11 @@ namespace Pleaseing
             this.endValue = endValue;
             this.setter = setter;
             this.lerpFunction = lerpFunction;
+        }
+
+        public void Reset()
+        {
+            setter.Invoke(startValue);
         }
 
         public void Tween(float progress)

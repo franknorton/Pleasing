@@ -8,6 +8,16 @@ using System.Threading.Tasks;
 
 namespace Pleaseing
 {
+    public enum TweenState
+    {
+        Running,
+        Paused,
+        Stopped
+    }
+
+    /// <summary>
+    /// The entry point for tweens. Call Tweening.Update() once per frame.
+    /// </summary>
     public static class Tweening
     {
         private static List<TweenTimeline> tweens;
@@ -17,6 +27,14 @@ namespace Pleaseing
             tweens = new List<TweenTimeline>();
         }
 
+        /// <summary>
+        /// Creates a new tween and timeline.
+        /// </summary>
+        /// <param name="obj">The object to tween.</param>
+        /// <param name="easingFunction">The easing function to use. (e.g. Easing.Linear)</param>
+        /// <param name="endTime">The time, in milliseconds when the tween will end.</param>
+        /// <param name="startTime">The time in milliseconds when the tween will begin.</param>
+        /// <returns>A TweenTimeline with a tween attached.</returns>
         public static TweenTimeline Tween(object obj, Func<float, float> easingFunction, float endTime, float startTime = 0)
         {
             var tween = new Tween(obj, startTime, endTime, easingFunction);
@@ -25,6 +43,12 @@ namespace Pleaseing
             return timeline;
         }
 
+        /// <summary>
+        /// Creates a new timeline.
+        /// </summary>
+        /// <param name="duration">The length of the timeline in milliseconds.
+        /// Leave blank to have tweens set it.</param>
+        /// <returns></returns>
         public static TweenTimeline NewTimeline(float duration)
         {
             var timeline = new TweenTimeline(duration);
@@ -41,13 +65,9 @@ namespace Pleaseing
         }
     }
 
-    public enum TweenState
-    {
-        Running,
-        Paused,
-        Stopped
-    }
-
+    /// <summary>
+    /// The TweenTimeline holds tweens and runs them in sequence based on the elapsed time.
+    /// </summary>
     public class TweenTimeline
     {
         public List<Tween> tweens;
@@ -83,6 +103,10 @@ namespace Pleaseing
             State = TweenState.Running;
             ResetProperties();
         }
+
+        /// <summary>
+        /// Scans through the timeline backwards, resetting properties to their orginal state.
+        /// </summary>
         protected void ResetProperties()
         {
             for(int i = tweens.Count - 1; i >= 0; i--)
@@ -90,13 +114,7 @@ namespace Pleaseing
                 tweens[i].ResetProperties();
             }
         }
-
-        public Tween AddTween(Tween tween)
-        {
-            tweens.Add(tween);
-            tweens = tweens.OrderBy(x => x.startTime).ToList();
-            return tween;
-        }
+        
         public Tween AddTween(object obj, Func<float, float> easingFunction, float startTime, float endTime)
         {
             var tween = new Tween(obj, startTime, endTime, easingFunction);
@@ -105,6 +123,12 @@ namespace Pleaseing
             if (endTime > duration)
                 duration = endTime;
 
+            tweens = tweens.OrderBy(x => x.startTime).ToList();
+            return tween;
+        }
+        public Tween AddTween(Tween tween)
+        {
+            tweens.Add(tween);
             tweens = tweens.OrderBy(x => x.startTime).ToList();
             return tween;
         }
@@ -140,6 +164,9 @@ namespace Pleaseing
         }
     }
 
+    /// <summary>
+    /// Tween contains an object and properties to manipulate over time.
+    /// </summary>
     public class Tween
     {
         private object targetObject;
@@ -170,6 +197,15 @@ namespace Pleaseing
             this.endTime = endTime;
         }
 
+        /// <summary>
+        /// Adds a new property based on the property's name.
+        /// This way is easier to read but uses reflection.
+        /// </summary>
+        /// <typeparam name="T">The type of value to be tweened.</typeparam>
+        /// <param name="propertyName">The name of the property to be tweened.</param>
+        /// <param name="value">The final value to tween the property to.</param>
+        /// <param name="lerpFunction">A function that will calculate the lerp for this value type.</param>
+        /// <returns></returns>
         public Tween Add<T>(string propertyName, T value, LerpFunction<T> lerpFunction)
         {
             var property = properties.FirstOrDefault(x => x.Name == propertyName);
@@ -232,6 +268,16 @@ namespace Pleaseing
             return this;
         }
 
+        /// <summary>
+        /// Adds a new property that uses a setter to assign the tweened value.
+        /// This has some useful cases such as when accessing a deeply nested property.
+        /// </summary>
+        /// <typeparam name="T">The type of value to tween.</typeparam>
+        /// <param name="startValue">The initial value when the tween begins.</param>
+        /// <param name="endValue">The value when the tween ends.</param>
+        /// <param name="setter">A function that will be called with the tweened value.</param>
+        /// <param name="lerpFunction">A function that will calculate the lerp for this type of value.</param>
+        /// <returns></returns>
         public Tween Add<T>(T startValue, T endValue, Action<T> setter, LerpFunction<T> lerpFunction)
         {
             var tweenableProperty = new TweenSetter<T>(startValue, endValue, setter, lerpFunction);
@@ -283,13 +329,12 @@ namespace Pleaseing
         }
     }
 
-    public interface TweenableProperty
+    internal interface TweenableProperty
     {
         void Tween(float progress);
         void Reset();
     }
-
-    class TweenProperty<T> : TweenableProperty
+    internal class TweenProperty<T> : TweenableProperty
     {
         public object target;
         public PropertyInfo property;
@@ -317,7 +362,7 @@ namespace Pleaseing
             property.SetValue(target, lerpValue);
         }
     }
-    class TweenField<T> : TweenableProperty
+    internal class TweenField<T> : TweenableProperty
     {
         public object target;
         public FieldInfo field;
@@ -345,7 +390,7 @@ namespace Pleaseing
             field.SetValue(target, lerpValue);
         }
     }
-    class TweenSetter<T> : TweenableProperty
+    internal class TweenSetter<T> : TweenableProperty
     {
         public T startValue;
         public T endValue;
@@ -371,11 +416,9 @@ namespace Pleaseing
             setter.Invoke(currentValue);
         }
     }
-
-
+    
     public delegate T LerpFunction<T>(T start, T end, float progress);
-
-    static class LerpFunctions
+    public static class LerpFunctions
     {
         public static LerpFunction<float> Float = (s, e, p) => s + (e - s) * p;
         public static LerpFunction<Vector2> Vector2 = (s, e, p) => { return Microsoft.Xna.Framework.Vector2.Lerp(s, e, p); };

@@ -35,12 +35,12 @@ namespace Pleaseing
         /// <param name="endTime">The time, in milliseconds when the tween will end.</param>
         /// <param name="startTime">The time in milliseconds when the tween will begin.</param>
         /// <returns>A TweenTimeline with a tween attached.</returns>
-        public static TweenTimeline Tween(object obj, Func<float, float> easingFunction, float endTime, float startTime = 0)
+        public static Tween Tween(object obj, Func<float, float> easingFunction, float endTime, float startTime = 0)
         {
             var tween = new Tween(obj, startTime, endTime, easingFunction);
             var timeline = new TweenTimeline(endTime);
             timeline.AddTween(tween);
-            return timeline;
+            return tween;
         }
 
         /// <summary>

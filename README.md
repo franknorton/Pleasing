@@ -10,7 +10,7 @@ Easing is at the core of tweening and motion graphics / animation in general. Pl
 
 Use any of the built in easing functions for quickly adding some smoothness to your graphics.
 
-```c#
+```csharp
 var value = 100;
 var percentComplete = 0.5; //A float from 0-1
 var easedPercent = Easing.Ease(EasingFunction.CubicInOut, value); 
@@ -41,7 +41,7 @@ Pleasing contains quick access to all of [Robert Penner's easing functions:](htt
 
 Take control of easing and get that custom motion you've been looking for using Cubic Bezier curves.
 
-```c#
+```csharp
 var value = 100;
 var percentComplete = 0.5;
 var easedPercent = Easing.Bezier(percentComplete, 0.3f, 0.75f, 0, 1);
@@ -64,7 +64,7 @@ The `Tweening` static class is the entry point and container for tweening. `Twee
 
 The simplest usage is to create a new TweenTimeline and Tween simultaneously:
 
-```c#
+```csharp
 //An object with multiple properties.
 //e.g. position, rotation, color, scale.
 var banner = new Banner();
@@ -85,19 +85,19 @@ Adding properties to a tween can be done two ways.
 
 *Using reflection and property names:*
 
-```c#
+```csharp
 tween.Add(nameof(banner.position), new Vector2(500, 500));
 ```
 
 *Or using a setter:*
 
-```c#
+```csharp
 tween.Add(banner.position, new Vector2(500, 500) (x) => banner.position = x);
 ```
 
 The setter has the advantage of being able to go deeper into nested objects:
 
-```c#
+```csharp
 tween.Add(banner.position.x, 500f, (x) => banner.position.x = x);
 ```
 

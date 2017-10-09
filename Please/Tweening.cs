@@ -418,6 +418,10 @@ namespace Pleaeing
             this.lerpFunction = lerpFunction;
         }
 
+        public TweenableProperty<T> AddFrame(float frame, T value)
+        {
+            return AddFrame(frame, value, Easing.Linear);
+        }
         public TweenableProperty<T> AddFrame(float frame, T value, EasingFunction easingFunction)
         {
             var newFrame = new TweenKeyFrame<T>(frame, value, easingFunction);

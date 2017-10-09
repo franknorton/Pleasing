@@ -5,9 +5,9 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 
-namespace Pleaseing
+namespace Pleaeing
 {
-    public enum EasingFunction
+    public enum EasingType
     {
         Linear,
         QuadraticIn,
@@ -45,71 +45,71 @@ namespace Pleaseing
 
     public static class Easing
     {
-        public static float Ease(EasingFunction easingFunction, float k)
+        public static float Ease(EasingType easingFunction, float k)
         {
             switch (easingFunction)
             {
-                case EasingFunction.Linear:
+                case EasingType.Linear:
                     return Linear(k);
-                case EasingFunction.QuadraticIn:
+                case EasingType.QuadraticIn:
                     return Quadratic.In(k);
-                case EasingFunction.QuadraticOut:
+                case EasingType.QuadraticOut:
                     return Quadratic.Out(k);
-                case EasingFunction.QuadraticInOut:
+                case EasingType.QuadraticInOut:
                     return Quadratic.InOut(k);
-                case EasingFunction.CubicIn:
+                case EasingType.CubicIn:
                     return Cubic.In(k);
-                case EasingFunction.CubicOut:
+                case EasingType.CubicOut:
                     return Cubic.Out(k);
-                case EasingFunction.CubicInOut:
+                case EasingType.CubicInOut:
                     return Cubic.InOut(k);
-                case EasingFunction.QuarticIn:
+                case EasingType.QuarticIn:
                     return Quartic.In(k);
-                case EasingFunction.QuarticOut:
+                case EasingType.QuarticOut:
                     return Quartic.Out(k);
-                case EasingFunction.QuarticInOut:
+                case EasingType.QuarticInOut:
                     return Quartic.InOut(k);
-                case EasingFunction.QuinticIn:
+                case EasingType.QuinticIn:
                     return Quintic.In(k);
-                case EasingFunction.QuinticOut:
+                case EasingType.QuinticOut:
                     return Quintic.Out(k);
-                case EasingFunction.QuinticInOut:
+                case EasingType.QuinticInOut:
                     return Quintic.InOut(k);
-                case EasingFunction.SinusoidalIn:
+                case EasingType.SinusoidalIn:
                     return Sinusoidal.In(k);
-                case EasingFunction.SinusoidalOut:
+                case EasingType.SinusoidalOut:
                     return Sinusoidal.Out(k);
-                case EasingFunction.SinusoidalInOut:
+                case EasingType.SinusoidalInOut:
                     return Sinusoidal.InOut(k);
-                case EasingFunction.ExponentialIn:
+                case EasingType.ExponentialIn:
                     return Exponential.In(k);
-                case EasingFunction.ExponentialOut:
+                case EasingType.ExponentialOut:
                     return Exponential.Out(k);
-                case EasingFunction.ExponentialInOut:
+                case EasingType.ExponentialInOut:
                     return Exponential.InOut(k);
-                case EasingFunction.CircularIn:
+                case EasingType.CircularIn:
                     return Circular.In(k);
-                case EasingFunction.CircularOut:
+                case EasingType.CircularOut:
                     return Circular.Out(k);
-                case EasingFunction.CircularInOut:
+                case EasingType.CircularInOut:
                     return Circular.InOut(k);
-                case EasingFunction.ElasticIn:
+                case EasingType.ElasticIn:
                     return Elastic.In(k);
-                case EasingFunction.ElasticOut:
+                case EasingType.ElasticOut:
                     return Elastic.Out(k);
-                case EasingFunction.ElasticInOut:
+                case EasingType.ElasticInOut:
                     return Elastic.InOut(k);
-                case EasingFunction.BackIn:
+                case EasingType.BackIn:
                     return Back.In(k);
-                case EasingFunction.BackOut:
+                case EasingType.BackOut:
                     return Back.Out(k);
-                case EasingFunction.BackInOut:
+                case EasingType.BackInOut:
                     return Back.InOut(k);
-                case EasingFunction.BounceIn:
+                case EasingType.BounceIn:
                     return Bounce.In(k);
-                case EasingFunction.BounceOut:
+                case EasingType.BounceOut:
                     return Bounce.Out(k);
-                case EasingFunction.BounceInOut:
+                case EasingType.BounceInOut:
                     return Bounce.InOut(k);
                 default:
                     return Linear(k);

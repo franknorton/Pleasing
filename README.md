@@ -1,107 +1,40 @@
-# Pleasing
+![Pleasing](/Pleasing.gif?raw=true)
 
-Pleasing is a easy-to-use easing and tweening library. It aims to be as simple as possible while also being flexible enough to fit all your needs. Unlike other tweening libraries, pleasing includes a tweening timeline which makes it simple to plan multiple tweens on multiple objects.
+**Pleasing** is an easy-to-use C# *easing* and *tweening* library. It aims to be as simple as possible while also being flexible enough for any scenario. Unlike other tweening libraries, pleasing includes a tweening timeline which makes it simple to plan multiple tweens on multiple objects.
 
-## Easing
+**The Pleasing logo was created using Pleasing.*
 
-Easing is at the core of tweening and motion graphics / animation in general. Pleasing includes a single file easing class that handles basic easing curves as well as custom cubic Bezier curves.
+## Installation
 
-### Basics
+**Nuget** 
 
-Use any of the built in easing functions for quickly adding some smoothness to your graphics.
+- Browse for Pleasing - Monogame in the Nuget explorer and install.
+- Type: __ in the nuget package manager console.
 
-```csharp
-var value = 100;
-var percentComplete = 0.5; //A float from 0-1
-var easedPercent = Easing.Ease(EasingFunction.CubicInOut, value); 
-value = value * easedPercent;
+**Zip**
 
-//Alternate method not using enum.
-var easedPercent = Easing.Cubic.InOut(value);
-```
+1. Download the repository as a .zip file.
+2. Extract it somewhere.
+3. Copy Tweening.cs and Easing.cs into your project.
+4. Add the namespace to any files using it and you're ready to go!
 
-Pleasing contains quick access to all of [Robert Penner's easing functions:](http://robertpenner.com/easing/)
+## Usage
 
-* Linear
+1. Add the namespace: `using Pleasing;`
+2. Get a new timeline: `var timeline = Tweening.NewTimeline(0);`
+3. Add a property to the timeline: `var positionProperty = timeline.AddProperty(Player, "position");`
+4. Add Keyframes: `positionProperty.AddFrame(1000, new Vector2(500, 250), Easing.Cubic.InOut);`
+5. Call Update every frame: `Tweening.Update(gameTime);`
+6. Watch and enjoy!
 
-*The following come with In / Out / InOut versions.*
+Consult the Wiki for more in-depth information and tutorials.
 
-* Quadratic
-* Cubic
-* Quartic
-* Quintic
-* Sinusoidal
-* Exponential
-* Circular
-* Elastic
-* Back
-* Bounce
+## Credits
 
-### Advanced
+Authors:
 
-Take control of easing and get that custom motion you've been looking for using Cubic Bezier curves.
+* Frank Norton
 
-```csharp
-var value = 100;
-var percentComplete = 0.5;
-var easedPercent = Easing.Bezier(percentComplete, 0.3f, 0.75f, 0, 1);
-value = value * easedPercent;
-```
+## License
 
-
-
-## Tweening
-
-Pleasing incorporates it's custom easing with an easy-to-use tweening library. Tweening let's you transition from value to value in a smooth fashion.
-
-### Basics
-
-The `Tweening` static class is the entry point and container for tweening. `Tweening.Update(gameTime)` must be called once per frame.
-
-**TweenTimeline**: A virtual timeline for tweens, allowing them to be run in sequence at specific moments, as well as looping them as a group.
-
-**Tween**: The tween itself which contains the object to be tweened, when the tweening occurs, and all the properties and values to be tweened.
-
-The simplest usage is to create a new TweenTimeline and Tween simultaneously:
-
-```csharp
-//An object with multiple properties.
-//e.g. position, rotation, color, scale.
-var banner = new Banner();
-
-//Create a new tween timeline and tween for the banner object with 2 second duration.
-var tween = Tweening.Tween(banner, Easing.Cubic.InOut, 2000);
-
-//Now assign properties to be tweened.
-tween.Add(nameof(banner.position), new Vector2(500, 500));
-tween.Add(nameof(banner.color), Color.Maroon);
-
-//All done! The tween starts automatically the next frame and will run once.
-```
-
-
-
-Adding properties to a tween can be done two ways.
-
-*Using reflection and property names:*
-
-```csharp
-tween.Add(nameof(banner.position), new Vector2(500, 500));
-```
-
-*Or using a setter:*
-
-```csharp
-tween.Add(banner.position, new Vector2(500, 500) (x) => banner.position = x);
-```
-
-The setter has the advantage of being able to go deeper into nested objects:
-
-```csharp
-tween.Add(banner.position.x, 500f, (x) => banner.position.x = x);
-```
-
-
-
-
-
+Pleasing is under the MIT license (2017). A copy of the license is found in the root of the repository.

@@ -1979,12 +1979,6 @@
             Gets or sets a bool that enables usage of Alt+F4 for window closing on desktop platforms. Value is true by default.
             </summary>
         </member>
-        <member name="P:Microsoft.Xna.Framework.GameWindow.Position">
-            <summary>
-            The location of this window on the desktop, eg: global coordinate space
-            which stretches across all screens.
-            </summary>
-        </member>
         <member name="P:Microsoft.Xna.Framework.GameWindow.Title">
             <summary>
             Gets or sets the title of the game window.
@@ -2001,18 +1995,6 @@
             <exception cref="T:System.NotImplementedException">
             Thrown when trying to use this property on a platform other than the WinDX and WinGL/Linux platforms.
             </exception>
-        </member>
-        <member name="E:Microsoft.Xna.Framework.GameWindow.TextInput">
-            <summary>
-            Use this event to retrieve text for objects like textbox's.
-            This event is not raised by noncharacter keys.
-            This event also supports key repeat.
-            For more information this event is based off:
-            http://msdn.microsoft.com/en-AU/library/system.windows.forms.control.keypress.aspx
-            </summary>
-            <remarks>
-            This event is only supported on the Windows DirectX, Windows OpenGL and Linux platforms.
-            </remarks>
         </member>
         <member name="T:Microsoft.Xna.Framework.IGraphicsDeviceManager">
             <summary>
@@ -4053,11 +4035,6 @@
             If <see cref="F:Microsoft.Xna.Framework.Rectangle.Width"/> or <see cref="F:Microsoft.Xna.Framework.Rectangle.Height"/> is an odd number,
             the center point will be rounded down.
             </remarks>
-        </member>
-        <member name="T:Microsoft.Xna.Framework.TextInputEventArgs">
-            <summary>
-            This class is used for the game window's TextInput event as EventArgs.
-            </summary>
         </member>
         <member name="M:Microsoft.Xna.Framework.TitleContainer.OpenStream(System.String)">
             <summary>
@@ -8519,6 +8496,11 @@
             <param name="instanceCount">The number of instances to render.</param>
             <remarks>Draw geometry with data from multiple bound vertex streams at different frequencies.</remarks>
         </member>
+        <member name="M:Microsoft.Xna.Framework.Graphics.GraphicsDevice.CreateDeviceIndependentResources">
+            <summary>
+            Creates resources not tied the active graphics device.
+            </summary>
+        </member>
         <member name="M:Microsoft.Xna.Framework.Graphics.GraphicsDevice.CreateDeviceResources">
             <summary>
             Create graphics device specific resources.
@@ -10923,20 +10905,6 @@
             ATC/ATITC compression (Android)
             </summary>
         </member>
-        <member name="T:Microsoft.Xna.Framework.Graphics.SwapChainRenderTarget">
-            <summary>
-            A swap chain used for rendering to a secondary GameWindow.
-            </summary>
-            <remarks>
-            This is an extension and not part of stock XNA.
-            It is currently implemented for Windows and DirectX only.
-            </remarks>
-        </member>
-        <member name="M:Microsoft.Xna.Framework.Graphics.SwapChainRenderTarget.Present">
-            <summary>
-            Displays the contents of the active back buffer to the screen.
-            </summary>
-        </member>
         <member name="M:Microsoft.Xna.Framework.Graphics.TextureCollection.Dirty">
             <summary>
             Marks all texture slots as dirty.
@@ -12364,6 +12332,36 @@
             <param name="playerIndex">Player index of the keyboard.</param>
             <returns>Current keyboard state.</returns>
         </member>
+        <member name="M:Microsoft.Xna.Framework.Input.KeyboardInput.Show(System.String,System.String,System.String,System.Boolean)">
+            <summary>
+            Displays the keyboard input interface asynchronously.
+            </summary>
+            <param name="title">Title of the dialog box.</param>
+            <param name="description">Description of the dialog box.</param>
+            <param name="defaultText">Default text displayed in the input area.</param>
+            <param name="usePasswordMode">If password mode is enabled, the characters entered are not displayed.</param>
+            <returns>Text entered by the player. Null if back was used.</returns>
+            <exception cref="T:System.Exception">Thrown when the message box is already visible</exception>
+            <example>
+            <code>
+            var name = await KeyboardInput.Show("Name", "What's your name?", "Player");
+            </code>
+            </example>
+        </member>
+        <member name="M:Microsoft.Xna.Framework.Input.KeyboardInput.Cancel(System.String)">
+            <summary>
+            Hides the keyboard input interface and returns the parameter as the result of <see cref="M:Microsoft.Xna.Framework.Input.KeyboardInput.Show(System.String,System.String,System.String,System.Boolean)"/>
+            </summary>
+            <param name="result">Result to return</param>
+            <exception cref="T:System.Exception">Thrown when the keyboard input is not visible</exception>
+            <example>
+            <code>
+            var nameTask = KeyboardInput.Show("Name", "What's your name?", "Player");
+            KeyboardInput.Cancel("John Doe");
+            var name = await nameTask;
+            </code>
+            </example>
+        </member>
         <member name="T:Microsoft.Xna.Framework.Input.KeyboardState">
             <summary>
             Holds the state of keystrokes by a keyboard.
@@ -13269,6 +13267,35 @@
             Key is pressed.
             </summary>
         </member>
+        <member name="M:Microsoft.Xna.Framework.Input.MessageBox.Show(System.String,System.String,System.Collections.Generic.IEnumerable{System.String})">
+            <summary>
+            Displays the message box interface asynchronously.
+            </summary>
+            <param name="title">Title of the message box.</param>
+            <param name="description">Description of the message box.</param>
+            <param name="buttons">Captions of the message box buttons. Up to three supported.</param>
+            <returns>Index of button selected by the player. Null if back was used.</returns>
+            <exception cref="T:System.Exception">Thrown when the message box is already visible</exception>
+            <example>
+            <code>
+            var color = await MessageBox.Show("Color", "What's your favorite color?", new[] { "Red", "Green", "Blue" });
+            </code>
+            </example>
+        </member>
+        <member name="M:Microsoft.Xna.Framework.Input.MessageBox.Cancel(System.Nullable{System.Int32})">
+            <summary>
+            Hides the message box interface and returns the parameter as the result of <see cref="M:Microsoft.Xna.Framework.Input.MessageBox.Show(System.String,System.String,System.Collections.Generic.IEnumerable{System.String})"/>
+            </summary>
+            <param name="result">Result to return</param>
+            <exception cref="T:System.Exception">Thrown when the message box is not visible</exception>
+            <example>
+            <code>
+            var colorTask = MessageBox.Show("Color", "What's your favorite color?", new[] { "Red", "Green", "Blue" });
+            MessageBox.Cancel(0);
+            var color = await colorTask;
+            </code>
+            </example>
+        </member>
         <member name="T:Microsoft.Xna.Framework.Input.Mouse">
             <summary>
             Allows reading position and button click information from mouse.
@@ -13960,6 +13987,12 @@
             Returns true if a touch gesture is available.
             </summary>
         </member>
+        <member name="T:Microsoft.Xna.Framework.Input.Touch.TouchQueue">
+            <summary>
+            Stores touches to apply them once a frame for platforms that dispatch touches asynchronously
+            while user code is running.
+            </summary>
+        </member>
         <member name="M:Microsoft.Xna.Framework.Media.Album.Dispose">
             <summary>
             Immediately releases the unmanaged resources used by this object.
@@ -14111,22 +14144,6 @@
             Load the contents of MediaLibrary. This blocking call might take up to a few minutes depending on the platform and the size of the user's music library.
             </summary>
             <param name="progressCallback">Callback that reports back the progress of the music library loading in percents (0-100).</param>
-        </member>
-        <member name="T:Microsoft.Xna.Framework.Media.MediaManagerState">
-            <summary>
-            This class provides a way for the MediaManager to be initialised exactly once, 
-            regardless of how many different places need it, and which is called first.
-            </summary>
-        </member>
-        <member name="M:Microsoft.Xna.Framework.Media.MediaManagerState.CheckStartup">
-            <summary>
-            Ensures that the MediaManager has been initialised. Must be called from UI thread.
-            </summary>
-        </member>
-        <member name="M:Microsoft.Xna.Framework.Media.MediaManagerState.CheckShutdown">
-            <summary>
-            Ensures that the MediaManager has been shutdown. Must be called from UI thread.
-            </summary>
         </member>
         <member name="M:Microsoft.Xna.Framework.Media.MediaPlayer.Play(Microsoft.Xna.Framework.Media.Song)">
             <summary>
@@ -16583,7 +16600,7 @@
             </summary>
             <remarks>
               <para>
-                Set this at any point before calling <see cref="M:System.IO.Stream.Close"/>.
+                Set this at any point before calling <see cref="!:Stream.Close"/>.
               </para>
             </remarks>
         </member>
@@ -16783,6 +16800,30 @@
             Return the given buffer to the pool.
             </summary>
             <param name="buffer"></param>
+        </member>
+        <member name="T:MonoGame.Framework.XamlGame`1">
+            <summary>
+            Static class for initializing a Game object for a XAML application.
+            </summary>
+            <typeparam name="T">A class derived from Game.</typeparam>
+        </member>
+        <member name="M:MonoGame.Framework.XamlGame`1.Create(System.String,Windows.UI.Core.CoreWindow,Windows.UI.Xaml.Controls.SwapChainBackgroundPanel)">
+            <summary>
+            Creates your Game class initializing it to work within a XAML application window.
+            </summary>
+            <param name="launchParameters">The command line arguments from launch.</param>
+            <param name="window">The core window object.</param>
+            <param name="swapChainBackgroundPanel">The XAML SwapChainBackgroundPanel to which we render the scene and recieve input events.</param>
+            <returns></returns>
+        </member>
+        <member name="M:MonoGame.Framework.XamlGame`1.Create(Windows.ApplicationModel.Activation.LaunchActivatedEventArgs,Windows.UI.Core.CoreWindow,Windows.UI.Xaml.Controls.SwapChainBackgroundPanel)">
+            <summary>
+            Preserves the previous execution state in MetroGamePlatform and returns the constructed game object initialized with the given window.
+            </summary>
+            <param name="args">The command line arguments from launch.</param>
+            <param name="window">The core window object.</param>
+            <param name="swapChainBackgroundPanel">The XAML SwapChainBackgroundPanel to which we render the scene and recieve input events.</param>
+            <returns></returns>
         </member>
     </members>
 </doc>

@@ -20,11 +20,17 @@ namespace Pleaeing
     /// </summary>
     public static class Tweening
     {
-        private static List<TweenTimeline> tweens;
+        private static List<TweenTimeline> timelines;
+
+        //For one-off tweens
+        private static List<TweenTimeline> singleTimelines;
+        private static List<TweenTimeline> removeTimelines;
 
         static Tweening()
         {
-            tweens = new List<TweenTimeline>();
+            timelines = new List<TweenTimeline>();
+            singleTimelines = new List<TweenTimeline>();
+            removeTimelines = new List<TweenTimeline>();
         }
 
         /// <summary>
@@ -35,12 +41,21 @@ namespace Pleaeing
         /// <param name="endTime">The time, in milliseconds when the tween will end.</param>
         /// <param name="startTime">The time in milliseconds when the tween will begin.</param>
         /// <returns>A TweenTimeline with a tween attached.</returns>
-        /*public static Tween Tween(object obj, Func<float, float> easingFunction, float endTime, float startTime = 0)
+        public static void Tween<T>(object target, string propertyName, T value, float duration, EasingFunction easingFunction, LerpFunction<T> lerpFunction, float delay = 0)
         {
-            var tween = new Tween(obj, startTime, endTime, easingFunction);
-            return tween;
-        }*/
+            var timeline = new TweenTimeline();
+            var property = timeline.AddProperty<T>(target, propertyName, lerpFunction);
+            property.AddFrame(duration, value);
+            singleTimelines.Add(timeline);
+        }
 
+        public static TweenTimeline NewTimeline()
+        {
+            var timeline = new TweenTimeline(0);
+            timeline.AdaptiveDuration = true;
+            timelines.Add(timeline);
+            return timeline;
+        }
         /// <summary>
         /// Creates a new timeline.
         /// </summary>
@@ -50,16 +65,35 @@ namespace Pleaeing
         public static TweenTimeline NewTimeline(float duration)
         {
             var timeline = new TweenTimeline(duration);
-            tweens.Add(timeline);
+            timelines.Add(timeline);
             return timeline;
+        }
+
+        public static void Clear()
+        {
+            timelines.Clear();
+            singleTimelines.Clear();
+            removeTimelines.Clear();
         }
 
         public static void Update(GameTime gameTime)
         {
-            foreach (var tween in tweens)
+            foreach (var timeline in timelines)
             {
-                tween.Update(gameTime);
+                timeline.Update(gameTime);
             }
+
+            foreach (var timeline in singleTimelines)
+            {
+                timeline.Update(gameTime);
+                if (timeline.State == TweenState.Stopped)
+                    removeTimelines.Add(timeline);
+            }
+            foreach(var timeline in removeTimelines)
+            {
+                singleTimelines.Remove(timeline);
+            }
+            removeTimelines.Clear();
         }
     }
 
@@ -73,7 +107,12 @@ namespace Pleaeing
         public bool Loop;
         public float duration;
         public TweenState State;
+        public bool AdaptiveDuration;
 
+        public TweenTimeline() : this(0)
+        {
+            AdaptiveDuration = true;
+        }
         public TweenTimeline(float duration)
         {
             this.duration = duration;
@@ -208,7 +247,30 @@ namespace Pleaeing
 
         public void Update(GameTime gameTime)
         {
-            if (State == TweenState.Running)
+            if(AdaptiveDuration)
+            {
+                elapsedMilliseconds += (float)gameTime.ElapsedGameTime.TotalMilliseconds;
+                if(State == TweenState.Running)
+                {
+                    var propertiesFinished = 0;
+                    foreach (var property in tweeningProperties)
+                    {
+                        if(!property.Update(elapsedMilliseconds)) //No Frames Left
+                        {
+                            propertiesFinished++;
+                        }
+                    }
+                    if (propertiesFinished == tweeningProperties.Count)
+                    {
+                        elapsedMilliseconds = 0;
+                        if (!Loop)
+                        {
+                            State = TweenState.Stopped;
+                        }
+                    }
+                }
+            }
+            else if (State == TweenState.Running)
             {
                 elapsedMilliseconds += (float)gameTime.ElapsedGameTime.TotalMilliseconds;
 
@@ -227,183 +289,18 @@ namespace Pleaeing
 
                 if (State == TweenState.Running)
                 {
-                    foreach (var tween in tweeningProperties)
+                    foreach (var property in tweeningProperties)
                     {
-                        tween.Update(elapsedMilliseconds);
-                    }
+                        property.Update(elapsedMilliseconds);                        
+                    }                    
                 }
             }
         }
     }
 
-    /// <summary>
-    /// Tween contains an object and properties to manipulate over time.
-    /// </summary>
-    //public class Tween
-    //{
-    //    private object targetObject;
-    //    private PropertyInfo[] properties;
-    //    private FieldInfo[] fields;
-    //    private List<TweenableProperty> tweeningProperties;
-    //    public float startTime;
-    //    public float endTime;
-    //    private float elapsedMilliseconds;
-    //    private Func<float, float> easingFunction;
-
-    //    public float Progress
-    //    {
-    //        get
-    //        {
-    //            return easingFunction.Invoke(MathHelper.Clamp((elapsedMilliseconds - startTime) / (endTime - startTime), 0, 1));
-    //        }
-    //    }
-
-    //    public Tween(object obj, float startTime, float endTime, Func<float, float> easingFunction)
-    //    {
-    //        targetObject = obj;
-    //        this.easingFunction = easingFunction;
-    //        properties = obj.GetType().GetProperties();
-    //        fields = obj.GetType().GetFields();
-    //        tweeningProperties = new List<TweenableProperty>();
-    //        this.startTime = startTime;
-    //        this.endTime = endTime;
-    //    }
-
-    //    /// <summary>
-    //    /// Adds a new property based on the property's name.
-    //    /// This way is easier to read but uses reflection.
-    //    /// </summary>
-    //    /// <typeparam name="T">The type of value to be tweened.</typeparam>
-    //    /// <param name="propertyName">The name of the property to be tweened.</param>
-    //    /// <param name="value">The final value to tween the property to.</param>
-    //    /// <param name="lerpFunction">A function that will calculate the lerp for this value type.</param>
-    //    /// <returns></returns>
-    //    public Tween Add<T>(string propertyName, T value, LerpFunction<T> lerpFunction)
-    //    {
-    //        var property = properties.FirstOrDefault(x => x.Name == propertyName);
-    //        if (property != null)
-    //        {
-    //            if (property.PropertyType == typeof(T))
-    //            {
-    //                var tweenableProperty = new TweenProperty<T>(targetObject, property, value, lerpFunction);
-    //                tweeningProperties.Add(tweenableProperty);
-    //            }
-    //        }
-    //        else
-    //        {
-    //            var field = fields.FirstOrDefault(x => x.Name == propertyName);
-    //            if (field != null)
-    //            {
-    //                if (field.FieldType == typeof(T))
-    //                {
-    //                    var tweenableProperty = new TweenField<T>(targetObject, field, value, lerpFunction);
-    //                    tweeningProperties.Add(tweenableProperty);
-    //                }
-    //            }
-    //        }
-
-    //        return this;
-    //    }
-    //    public Tween Add(string propertyName, float value)
-    //    {
-    //        Add<float>(propertyName, value, LerpFunctions.Float);
-    //        return this;
-    //    }
-    //    public Tween Add(string propertyName, Vector2 value)
-    //    {
-    //        Add(propertyName, value, LerpFunctions.Vector2);
-    //        return this;
-    //    }
-    //    public Tween Add(string propertyName, Vector3 value)
-    //    {
-    //        Add(propertyName, value, LerpFunctions.Vector3);
-    //        return this;
-    //    }
-    //    public Tween Add(string propertyName, Vector4 value)
-    //    {
-    //        Add(propertyName, value, LerpFunctions.Vector4);
-    //        return this;
-    //    }
-    //    public Tween Add(string propertyName, Color value)
-    //    {
-    //        Add(propertyName, value, LerpFunctions.Color);
-    //        return this;
-    //    }
-    //    public Tween Add(string propertyName, Quaternion value)
-    //    {
-    //        Add(propertyName, value, LerpFunctions.Quaternion);
-    //        return this;
-    //    }
-    //    public Tween Add(string propertyName, Rectangle value)
-    //    {
-    //        Add(propertyName, value, LerpFunctions.Rectangle);
-    //        return this;
-    //    }
-
-    //    /// <summary>
-    //    /// Adds a new property that uses a setter to assign the tweened value.
-    //    /// This has some useful cases such as when accessing a deeply nested property.
-    //    /// </summary>
-    //    /// <typeparam name="T">The type of value to tween.</typeparam>
-    //    /// <param name="startValue">The initial value when the tween begins.</param>
-    //    /// <param name="endValue">The value when the tween ends.</param>
-    //    /// <param name="setter">A function that will be called with the tweened value.</param>
-    //    /// <param name="lerpFunction">A function that will calculate the lerp for this type of value.</param>
-    //    /// <returns></returns>
-    //    public Tween Add<T>(T startValue, T endValue, Action<T> setter, LerpFunction<T> lerpFunction)
-    //    {
-    //        var tweenableProperty = new TweenSetter<T>(startValue, endValue, setter, lerpFunction);
-    //        tweeningProperties.Add(tweenableProperty);
-    //        return this;
-    //    }
-    //    public Tween Add(float startValue, float endValue, Action<float> setter)
-    //    {
-    //        return Add(startValue, endValue, setter, LerpFunctions.Float);
-    //    }
-    //    public Tween Add(Vector2 startValue, Vector2 endValue, Action<Vector2> setter)
-    //    {
-    //        return Add(startValue, endValue, setter, LerpFunctions.Vector2);
-    //    }
-    //    public Tween Add(Vector3 startValue, Vector3 endValue, Action<Vector3> setter)
-    //    {
-    //        return Add(startValue, endValue, setter, LerpFunctions.Vector3);
-    //    }
-    //    public Tween Add(Vector4 startValue, Vector4 endValue, Action<Vector4> setter)
-    //    {
-    //        return Add(startValue, endValue, setter, LerpFunctions.Vector4);
-    //    }
-    //    public Tween Add(Color startValue, Color endValue, Action<Color> setter)
-    //    {
-    //        return Add(startValue, endValue, setter, LerpFunctions.Color);
-    //    }
-    //    public Tween Add(Quaternion startValue, Quaternion endValue, Action<Quaternion> setter)
-    //    {
-    //        return Add(startValue, endValue, setter, LerpFunctions.Quaternion);
-    //    }
-    //    public Tween Add(Rectangle startValue, Rectangle endValue, Action<Rectangle> setter)
-    //    {
-    //        return Add(startValue, endValue, setter, LerpFunctions.Rectangle);
-    //    }
-
-    //    public void ResetProperties()
-    //    {
-    //        foreach (var property in tweeningProperties)
-    //            property.Reset();
-    //    }
-
-    //    public void Update(float timelineElapsedMilliseconds)
-    //    {
-    //        elapsedMilliseconds = timelineElapsedMilliseconds;
-
-    //        foreach (var property in tweeningProperties)
-    //            property.Tween(Progress);
-
-    //    }
-    //}
-
     public interface ITweenableProperty
     {
-        void Update(float timelineElapsed);
+        bool Update(float timelineElapsed);
         void Reset();
     }
     public abstract class TweenableProperty<T> : ITweenableProperty
@@ -411,6 +308,7 @@ namespace Pleaeing
         protected T initialValue;
         protected List<TweenKeyFrame<T>> keyFrames;
         protected LerpFunction<T> lerpFunction;
+        protected bool Done;
 
         public TweenableProperty(LerpFunction<T> lerpFunction)
         {
@@ -430,13 +328,13 @@ namespace Pleaeing
             return this;
         }
 
-        public void Update(float timelineElapsed)
+        public bool Update(float timelineElapsed)
         {
             TweenKeyFrame<T> lastFrame = null;
             TweenKeyFrame<T> nextFrame = null;
             foreach(var frame in keyFrames)
             {
-                if(frame.frame < timelineElapsed)
+                if(frame.frame <= timelineElapsed)
                 {
                     lastFrame = frame;
                 }
@@ -447,7 +345,15 @@ namespace Pleaeing
                 }
             }
 
-            if( nextFrame != null)
+            if(nextFrame == null)
+            {
+                if(!Done)
+                    SetValue(lastFrame.value);
+
+                Done = true;
+                return false;
+            }
+            else
             {
                 if (lastFrame == null)
                 {
@@ -464,6 +370,9 @@ namespace Pleaeing
                     SetValue(newValue);
                 }
             }
+
+            return true;
+            
         }
 
         public abstract void SetValue(T value);

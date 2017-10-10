@@ -19,3 +19,4 @@ C:\Users\fnorton\Documents\lunch\BitBucket\Pleasing\Please\bin\Release\SharpDX.M
 C:\Users\fnorton\Documents\lunch\BitBucket\Pleasing\Please\obj\Release\Pleasing.csproj.CoreCompileInputs.cache
 C:\Users\fnorton\Documents\lunch\BitBucket\Pleasing\Please\obj\Release\Please.dll
 C:\Users\fnorton\Documents\lunch\BitBucket\Pleasing\Please\obj\Release\Please.pdb
+C:\Users\fnorton\Documents\lunch\BitBucket\Pleasing\Please\obj\Release\Pleasing.csprojResolveAssemblyReference.cache

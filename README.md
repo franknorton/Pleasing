@@ -7,9 +7,7 @@
 ## Installation
 
 **Nuget** 
-
-- Browse for Pleasing - Monogame in the Nuget explorer and install.
-- Type: __ in the nuget package manager console.
+- Coming soon.
 
 **Zip**
 

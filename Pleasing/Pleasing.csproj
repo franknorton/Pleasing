@@ -2,6 +2,10 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <Authors>FrankN326</Authors>
+    <PackageId>FrankNorton.Pleasing</PackageId>
+    <Description>Pleasing is a flexible and fast easing and tweening library. 31 built-int easings are available, or build your own with the custom bezier function. Tween individual values or groups and plan multiple tweens using a timeline. Includes monogame support.</Description>
+    <PackageProjectUrl>https://github.com/Saliken/Pleasing</PackageProjectUrl>
   </PropertyGroup>
 
 </Project>
